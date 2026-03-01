@@ -103,3 +103,24 @@ export async function forgotPassword(req: Request, res: Response) {
     });
   }
 }
+
+/**
+ * RESET PASSWORD
+ */
+export async function resetPassword(req: Request, res: Response) {
+  try {
+    await authService.resetPassword(req.body);
+
+    res.status(200).json({
+      success: true,
+      message: "Password reset successful",
+      data: null,
+    });
+  } catch (error: any) {
+    res.status(400).json({
+      success: false,
+      message: error.message || "Failed to reset password",
+      data: null,
+    });
+  }
+}

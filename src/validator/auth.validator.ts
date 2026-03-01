@@ -102,3 +102,32 @@ export const forgotPasswordSchema = z.object({
     .trim()
     .min(3, "Username or email is required"),
 });
+
+/*  RESET PASSWORD  */
+
+export const resetPasswordSchema = z
+  .object({
+    token: z
+      .string()
+      .trim()
+      .min(1, "Reset token is required"),
+
+    newPassword: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .max(100)
+      .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+      .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+      .regex(/[0-9]/, "Password must contain at least one number"),
+
+    confirmPassword: z.string().min(8, "Confirm password is required"),
+  })
+  .superRefine((data, ctx) => {
+    if (data.newPassword !== data.confirmPassword) {
+      ctx.addIssue({
+        path: ["confirmPassword"],
+        code: z.ZodIssueCode.custom,
+        message: "Passwords do not match",
+      });
+    }
+  });

@@ -21,3 +21,16 @@ export function signPasswordResetToken(payload: { userId: number }) {
     { expiresIn: PASSWORD_RESET_EXPIRES_IN }
   );
 }
+
+export function verifyPasswordResetToken(token: string) {
+  const decoded = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload & {
+    userId?: number;
+    type?: string;
+  };
+
+  if (decoded.type !== "password_reset" || !decoded.userId) {
+    throw new Error("Invalid or expired reset token");
+  }
+
+  return { userId: decoded.userId };
+}

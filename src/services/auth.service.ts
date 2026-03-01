@@ -1,9 +1,18 @@
 import prisma from "../lib/prisma";
 import bcrypt from "bcrypt";
-import { signPasswordResetToken, signToken } from "../lib/jwt";
+import {
+  signPasswordResetToken,
+  signToken,
+  verifyPasswordResetToken,
+} from "../lib/jwt";
 
 type ForgotPasswordPayload = {
   identifier: string;
+};
+
+type ResetPasswordPayload = {
+  token: string;
+  newPassword: string;
 };
 
 export async function login(data: { username: string; password: string }) {
@@ -106,4 +115,34 @@ export async function requestPasswordReset(data: ForgotPasswordPayload) {
       "If an account with that email/username exists, a reset token has been generated.",
     resetToken,
   };
+}
+
+export async function resetPassword(data: ResetPasswordPayload) {
+  const decoded = verifyPasswordResetToken(data.token);
+
+  if (!decoded?.userId) {
+    throw new Error("Invalid or expired reset token");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: decoded.userId },
+  });
+
+  if (!user || !user.isActive) {
+    throw new Error("Invalid or expired reset token");
+  }
+
+  const samePassword = await bcrypt.compare(data.newPassword, user.password);
+  if (samePassword) {
+    throw new Error("New password must be different from current password");
+  }
+
+  const hashedPassword = await bcrypt.hash(data.newPassword, 10);
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { password: hashedPassword },
+  });
+
+  return true;
 }

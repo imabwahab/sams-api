@@ -8,6 +8,7 @@ import {
   forgotPasswordSchema,
   loginSchema,
   registerSchema,
+  resetPasswordSchema,
 } from "../validator/auth.validator";
 import { requireAuth } from "../middleware/auth.middleware";
 
@@ -17,6 +18,11 @@ router.post(
   "/forgot-password",
   validate(forgotPasswordSchema),
   controller.forgotPassword
+);
+router.post(
+  "/reset-password",
+  validate(resetPasswordSchema),
+  controller.resetPassword
 );
 router.post("/logout", requireAuth, controller.logout);
 router.get("/user", requireAuth, controller.me);
