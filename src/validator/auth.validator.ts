@@ -44,7 +44,7 @@ export const registerSchema = z
       .min(2, "Full name is required")
       .max(100),
 
-    role: z.enum(["PATIENT", "DOCTOR"], {
+    role: z.enum(["patient", "doctor"], {
       message: "Invalid role selected",
     }),
 
@@ -67,7 +67,7 @@ export const registerSchema = z
   })
   .superRefine((data, ctx) => {
     // If role is DOCTOR, enforce doctor-specific fields
-    if (data.role === "DOCTOR") {
+    if (data.role === "doctor") {
       if (!data.specialization) {
         ctx.addIssue({
           path: ["specialization"],
