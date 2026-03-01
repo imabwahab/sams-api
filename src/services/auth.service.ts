@@ -1,6 +1,10 @@
 import prisma from "../lib/prisma";
 import bcrypt from "bcrypt";
-import { signToken } from "../lib/jwt";
+import { signPasswordResetToken, signToken } from "../lib/jwt";
+
+type ForgotPasswordPayload = {
+  identifier: string;
+};
 
 export async function login(data: { username: string; password: string }) {
   const identifier = data.username.toLowerCase();
@@ -75,5 +79,31 @@ export async function register(data: any) {
     username: user.username,
     role: user.role,
     fullName: user.fullName,
+  };
+}
+
+export async function requestPasswordReset(data: ForgotPasswordPayload) {
+  const identifier = data.identifier.toLowerCase().trim();
+
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [{ email: identifier }, { username: identifier }],
+      isActive: true,
+    },
+  });
+
+  if (!user) {
+    return {
+      message:
+        "If an account with that email/username exists, a reset token has been generated.",
+    };
+  }
+
+  const resetToken = signPasswordResetToken({ userId: user.id });
+
+  return {
+    message:
+      "If an account with that email/username exists, a reset token has been generated.",
+    resetToken,
   };
 }

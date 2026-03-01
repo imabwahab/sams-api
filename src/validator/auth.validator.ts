@@ -93,3 +93,12 @@ export const registerSchema = z
       }
     }
   });
+
+/*  FORGOT PASSWORD  */
+
+export const forgotPasswordSchema = z.object({
+  identifier: z
+    .string()
+    .trim()
+    .min(3, "Username or email is required"),
+});
