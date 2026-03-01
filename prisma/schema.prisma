@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
@@ -8,7 +7,6 @@ datasource db {
   provider = "mysql"
 }
 
-
 enum UserRole {
   patient
   doctor
@@ -16,32 +14,35 @@ enum UserRole {
 }
 
 model User {
-  id         Int            @id @default(autoincrement())
-  username   String         @unique
-  email      String         @unique
-  password   String
-  role       UserRole       @default(patient)
-  fullName   String         @map("full_name")
-  phone      String?
-  isActive   Boolean        @default(true) @map("is_active")
-  createdAt  DateTime       @default(now()) @map("created_at")
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  role      UserRole @default(patient)
+  fullName  String   @map("full_name")
+  phone     String?
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
 
   // Add the back-reference relation here
   doctorProfile DoctorProfile? // Optional one-to-one relation to DoctorProfile
 
   schedules Schedule[]
 
+  patientAppointments Appointment[] @relation("PatientAppointments")
+  doctorAppointments  Appointment[] @relation("DoctorAppointments")
+
   @@map("users")
 }
 
 model DoctorProfile {
-  id               Int      @id @default(autoincrement())
-  userId           Int      @unique // Unique constraint ensures one-to-one
-  specialization   String
-  bio              String?
-  consultationFee  Float?
-  experienceYears  Int?
-  createdAt        DateTime @default(now())
+  id              Int      @id @default(autoincrement())
+  userId          Int      @unique // Unique constraint ensures one-to-one
+  specialization  String
+  bio             String?
+  consultationFee Float?
+  experienceYears Int?
+  createdAt       DateTime @default(now())
 
   // This relation field links the DoctorProfile to a User
   user User @relation(fields: [userId], references: [id])
@@ -60,14 +61,38 @@ enum DayOfWeek {
 }
 
 model Schedule {
-  id           Int       @id @default(autoincrement())
-  doctorId     Int       @map("doctor_id")
-  dayOfWeek    DayOfWeek @map("day_of_week")
-  startTime    String    @map("start_time") // "HH:mm"
-  endTime      String    @map("end_time")   // "HH:mm"
-  isAvailable  Boolean   @default(true) @map("is_available")
+  id          Int       @id @default(autoincrement())
+  doctorId    Int       @map("doctor_id")
+  dayOfWeek   DayOfWeek @map("day_of_week")
+  startTime   String    @map("start_time") // "HH:mm"
+  endTime     String    @map("end_time") // "HH:mm"
+  isAvailable Boolean   @default(true) @map("is_available")
 
   doctor User @relation(fields: [doctorId], references: [id])
 
   @@map("schedules")
+}
+
+enum AppointmentStatus {
+  pending
+  confirmed
+  cancelled
+  completed
+}
+
+model Appointment {
+  id        Int               @id @default(autoincrement())
+  patientId Int               @map("patient_id")
+  doctorId  Int               @map("doctor_id")
+  date      DateTime
+  startTime String            @map("start_time")
+  endTime   String            @map("end_time")
+  status    AppointmentStatus @default(pending)
+  notes     String?
+  createdAt DateTime          @default(now()) @map("created_at")
+
+  patient User @relation("PatientAppointments", fields: [patientId], references: [id])
+  doctor  User @relation("DoctorAppointments", fields: [doctorId], references: [id])
+
+  @@map("appointments")
 }
