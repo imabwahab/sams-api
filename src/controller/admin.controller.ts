@@ -1,5 +1,16 @@
 import { Request, Response } from "express";
+import { z } from "zod";
+import {
+  adminIdParamSchema,
+  createAdminSchema,
+  listAdminsQuerySchema,
+  updateAdminSchema,
+} from "../validator/admin.validator";
 import { AdminServiceError, adminService } from "../services/admin.service";
+
+function getFirstIssueMessage(error: z.ZodError): string {
+  return error.issues[0]?.message ?? "Validation failed";
+}
 
 function success(res: Response, message: string, data: unknown, statusCode = 200) {
   return res.status(statusCode).json({
@@ -10,6 +21,14 @@ function success(res: Response, message: string, data: unknown, statusCode = 200
 }
 
 function handleError(error: unknown, res: Response) {
+  if (error instanceof z.ZodError) {
+    return res.status(400).json({
+      success: false,
+      message: getFirstIssueMessage(error),
+      data: null,
+    });
+  }
+
   if (error instanceof AdminServiceError) {
     return res.status(error.statusCode).json({
       success: false,
@@ -38,34 +57,13 @@ function ensureAdmin(req: Request, res: Response): boolean {
   return true;
 }
 
-function parsePositiveId(value: string): number {
-  const id = Number.parseInt(value, 10);
-
-  if (!Number.isInteger(id) || id <= 0) {
-    throw new AdminServiceError("Invalid admin id", 400);
-  }
-
-  return id;
-}
-
 export const adminController = {
   async list(req: Request, res: Response) {
     try {
       if (!ensureAdmin(req, res)) return;
 
-      const search = typeof req.query.search === "string" ? req.query.search : undefined;
-      const isActiveQuery =
-        typeof req.query.isActive === "string" ? req.query.isActive : undefined;
-      const isActive =
-        isActiveQuery === undefined
-          ? undefined
-          : isActiveQuery === "true"
-            ? true
-            : isActiveQuery === "false"
-              ? false
-              : undefined;
-
-      const admins = await adminService.listAdmins({ search, isActive });
+      const parsed = listAdminsQuerySchema.parse(req.query);
+      const admins = await adminService.listAdmins(parsed);
       return success(res, "Admins fetched successfully", admins);
     } catch (error) {
       return handleError(error, res);
@@ -76,7 +74,7 @@ export const adminController = {
     try {
       if (!ensureAdmin(req, res)) return;
 
-      const id = parsePositiveId(req.params.id);
+      const { id } = adminIdParamSchema.parse(req.params);
       const admin = await adminService.getAdminById(id);
       return success(res, "Admin fetched successfully", admin);
     } catch (error) {
@@ -88,7 +86,8 @@ export const adminController = {
     try {
       if (!ensureAdmin(req, res)) return;
 
-      const admin = await adminService.createAdmin(req.body);
+      const parsed = createAdminSchema.parse(req.body);
+      const admin = await adminService.createAdmin(parsed);
       return success(res, "Admin created successfully", admin, 201);
     } catch (error) {
       return handleError(error, res);
@@ -99,13 +98,14 @@ export const adminController = {
     try {
       if (!ensureAdmin(req, res)) return;
 
-      const id = parsePositiveId(req.params.id);
+      const { id } = adminIdParamSchema.parse(req.params);
+      const parsed = updateAdminSchema.parse(req.body);
 
-      if (req.user?.id === id && req.body?.isActive === false) {
+      if (req.user?.id === id && parsed.isActive === false) {
         throw new AdminServiceError("You cannot deactivate your own account", 400);
       }
 
-      const admin = await adminService.updateAdmin(id, req.body);
+      const admin = await adminService.updateAdmin(id, parsed);
       return success(res, "Admin updated successfully", admin);
     } catch (error) {
       return handleError(error, res);
@@ -116,7 +116,7 @@ export const adminController = {
     try {
       if (!ensureAdmin(req, res)) return;
 
-      const id = parsePositiveId(req.params.id);
+      const { id } = adminIdParamSchema.parse(req.params);
 
       if (req.user?.id === id) {
         throw new AdminServiceError("You cannot delete your own account", 400);

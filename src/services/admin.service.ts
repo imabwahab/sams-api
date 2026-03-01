@@ -2,29 +2,11 @@ import bcrypt from "bcrypt";
 import { Prisma } from "../generated/prisma/client";
 import prisma from "../lib/prisma";
 import { AdminModel } from "../model/admin.model";
-
-type ListAdminsQueryInput = {
-  search?: string;
-  isActive?: boolean;
-};
-
-type CreateAdminInput = {
-  username: string;
-  email: string;
-  password: string;
-  fullName: string;
-  phone?: string;
-  isActive?: boolean;
-};
-
-type UpdateAdminInput = {
-  username?: string;
-  email?: string;
-  password?: string;
-  fullName?: string;
-  phone?: string | null;
-  isActive?: boolean;
-};
+import {
+  CreateAdminInput,
+  ListAdminsQueryInput,
+  UpdateAdminInput,
+} from "../validator/admin.validator";
 
 export class AdminServiceError extends Error {
   statusCode: number;
