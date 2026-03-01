@@ -15,6 +15,11 @@ type ResetPasswordPayload = {
   newPassword: string;
 };
 
+type ChangePasswordPayload = {
+  currentPassword: string;
+  newPassword: string;
+};
+
 export async function login(data: { username: string; password: string }) {
   const identifier = data.username.toLowerCase();
 
@@ -141,6 +146,38 @@ export async function resetPassword(data: ResetPasswordPayload) {
 
   await prisma.user.update({
     where: { id: user.id },
+    data: { password: hashedPassword },
+  });
+
+  return true;
+}
+
+export async function changePassword(
+  userId: number,
+  data: ChangePasswordPayload
+) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user || !user.isActive) {
+    throw new Error("User not found");
+  }
+
+  const valid = await bcrypt.compare(data.currentPassword, user.password);
+  if (!valid) {
+    throw new Error("Current password is incorrect");
+  }
+
+  const samePassword = await bcrypt.compare(data.newPassword, user.password);
+  if (samePassword) {
+    throw new Error("New password must be different from current password");
+  }
+
+  const hashedPassword = await bcrypt.hash(data.newPassword, 10);
+
+  await prisma.user.update({
+    where: { id: userId },
     data: { password: hashedPassword },
   });
 

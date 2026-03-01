@@ -5,6 +5,7 @@ const router = Router();
 import * as controller from "../controller/auth.controller";
 import { validate } from "../middleware/validate";
 import {
+  changePasswordSchema,
   forgotPasswordSchema,
   loginSchema,
   registerSchema,
@@ -23,6 +24,12 @@ router.post(
   "/reset-password",
   validate(resetPasswordSchema),
   controller.resetPassword
+);
+router.post(
+  "/change-password",
+  requireAuth,
+  validate(changePasswordSchema),
+  controller.changePassword
 );
 router.post("/logout", requireAuth, controller.logout);
 router.get("/user", requireAuth, controller.me);

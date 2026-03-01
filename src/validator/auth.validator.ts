@@ -131,3 +131,29 @@ export const resetPasswordSchema = z
       });
     }
   });
+
+/*  CHANGE PASSWORD  */
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z
+      .string()
+      .min(8, "Current password must be at least 8 characters"),
+
+    newPassword: z
+      .string()
+      .min(8, "New password must be at least 8 characters")
+      .max(100)
+      .regex(/[A-Z]/, "New password must contain at least one uppercase letter")
+      .regex(/[a-z]/, "New password must contain at least one lowercase letter")
+      .regex(/[0-9]/, "New password must contain at least one number"),
+  })
+  .superRefine((data, ctx) => {
+    if (data.currentPassword === data.newPassword) {
+      ctx.addIssue({
+        path: ["newPassword"],
+        code: z.ZodIssueCode.custom,
+        message: "New password must be different from current password",
+      });
+    }
+  });
