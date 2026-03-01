@@ -29,6 +29,8 @@ model User {
   // Add the back-reference relation here
   doctorProfile DoctorProfile? // Optional one-to-one relation to DoctorProfile
 
+  schedules Schedule[]
+
   @@map("users")
 }
 
@@ -45,4 +47,27 @@ model DoctorProfile {
   user User @relation(fields: [userId], references: [id])
 
   @@map("doctor_profiles")
+}
+
+enum DayOfWeek {
+  monday
+  tuesday
+  wednesday
+  thursday
+  friday
+  saturday
+  sunday
+}
+
+model Schedule {
+  id           Int       @id @default(autoincrement())
+  doctorId     Int       @map("doctor_id")
+  dayOfWeek    DayOfWeek @map("day_of_week")
+  startTime    String    @map("start_time") // "HH:mm"
+  endTime      String    @map("end_time")   // "HH:mm"
+  isAvailable  Boolean   @default(true) @map("is_available")
+
+  doctor User @relation(fields: [doctorId], references: [id])
+
+  @@map("schedules")
 }
