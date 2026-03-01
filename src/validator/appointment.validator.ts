@@ -2,9 +2,9 @@ import { z } from "zod";
 
 const appointmentStatusSchema = z.enum([
   "pending",
-  "confirmed",
+  "accepted",
   "cancelled",
-  "completed",
+  "done",
 ]);
 
 const timeSchema = z
