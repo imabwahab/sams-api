@@ -76,13 +76,17 @@ export async function register(data: any) {
 
   // Optional doctor profile
   if (user.role === "doctor") {
+    if (data.consultationFee === undefined) {
+      throw new Error("Consultation fee is required for doctors");
+    }
+
     await prisma.doctorProfile.create({
       data: {
         userId: user.id,
         specialization: data.specialization!,
         bio: data.bio,
         consultationFee: data.consultationFee,
-        experienceYears: data.experienceYears,
+        experienceYears: data.experienceYears ?? 0,
       },
     });
   }
