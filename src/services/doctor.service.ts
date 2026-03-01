@@ -16,7 +16,7 @@ type CreateDoctorInput = {
   phone?: string;
   specialization: string;
   bio?: string;
-  consultationFee?: number;
+  consultationFee: number;
   experienceYears?: number;
   isActive?: boolean;
 };
@@ -28,8 +28,8 @@ type UpdateDoctorInput = {
   phone?: string | null;
   specialization?: string;
   bio?: string | null;
-  consultationFee?: number | null;
-  experienceYears?: number | null;
+  consultationFee?: number;
+  experienceYears?: number;
   isActive?: boolean;
 };
 
@@ -59,7 +59,6 @@ const doctorSelect = {
       bio: true,
       consultationFee: true,
       experienceYears: true,
-      createdAt: true,
     },
   },
 } satisfies Prisma.UserSelect;
@@ -192,6 +191,8 @@ export const doctorService = {
           select: {
             id: true,
             specialization: true,
+            consultationFee: true,
+            experienceYears: true,
           },
         },
       },
@@ -229,10 +230,20 @@ export const doctorService = {
 
     const nextSpecialization =
       data.specialization ?? existing.doctorProfile?.specialization;
+    const nextConsultationFee =
+      data.consultationFee ?? existing.doctorProfile?.consultationFee;
+    const nextExperienceYears =
+      data.experienceYears ?? existing.doctorProfile?.experienceYears ?? 0;
 
     if (!nextSpecialization) {
       throw new DoctorServiceError(
         "Specialization is required for doctor profile",
+        400
+      );
+    }
+    if (nextConsultationFee === undefined) {
+      throw new DoctorServiceError(
+        "Consultation fee is required for doctor profile",
         400
       );
     }
@@ -250,8 +261,8 @@ export const doctorService = {
                     create: {
                       specialization: nextSpecialization,
                       bio: data.bio ?? null,
-                      consultationFee: data.consultationFee ?? null,
-                      experienceYears: data.experienceYears ?? null,
+                      consultationFee: nextConsultationFee,
+                      experienceYears: nextExperienceYears,
                     },
                   },
                 },
