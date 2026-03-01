@@ -9,6 +9,13 @@ type Schema = ZodObject<ZodRawShape>;
  */
 export function validate<T extends Schema>(schema: T): RequestHandler {
   return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.body) {
+      return res.status(400).json({
+        message: "Validation failed",
+        errors: [{ field: "", message: "Request body is missing" }],
+      });
+    }
+
     try {
       // Parse and validate the request body
       req.body = schema.parse(req.body);
