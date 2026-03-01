@@ -2,15 +2,14 @@ export type DoctorProfileModel = {
   id: number;
   specialization: string;
   bio: string | null;
-  consultationFee: number | null;
-  experienceYears: number | null;
-  createdAt: Date;
+  consultationFee: number;
+  experienceYears: number;
 };
 
 export type DoctorModel = {
   id: number;
   username: string;
-  email: string;
+  email: string | null;
   fullName: string;
   phone: string | null;
   role: "patient" | "doctor" | "admin";
@@ -23,13 +22,13 @@ export type DoctorWithSchedulesModel = DoctorModel & {
   schedules: Array<{
     id: number;
     dayOfWeek:
-      | "monday"
-      | "tuesday"
-      | "wednesday"
-      | "thursday"
-      | "friday"
-      | "saturday"
-      | "sunday";
+      | "Monday"
+      | "Tuesday"
+      | "Wednesday"
+      | "Thursday"
+      | "Friday"
+      | "Saturday"
+      | "Sunday";
     startTime: string;
     endTime: string;
     isAvailable: boolean;
