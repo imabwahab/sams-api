@@ -61,7 +61,7 @@ export const createDoctorSchema = z.object({
   phone: phoneSchema.optional(),
   specialization: specializationSchema,
   bio: bioSchema.optional(),
-  consultationFee: z.coerce.number().positive().optional(),
+  consultationFee: z.coerce.number().positive(),
   experienceYears: z.coerce.number().int().min(0).max(70).optional(),
   isActive: z.boolean().optional(),
 });
@@ -79,8 +79,8 @@ export const updateDoctorSchema = z
     phone: phoneSchema.nullable().optional(),
     specialization: specializationSchema.optional(),
     bio: bioSchema.nullable().optional(),
-    consultationFee: z.coerce.number().positive().nullable().optional(),
-    experienceYears: z.coerce.number().int().min(0).max(70).nullable().optional(),
+    consultationFee: z.coerce.number().positive().optional(),
+    experienceYears: z.coerce.number().int().min(0).max(70).optional(),
     isActive: z.boolean().optional(),
   })
   .refine((value) => Object.keys(value).length > 0, {
