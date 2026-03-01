@@ -16,7 +16,7 @@ enum UserRole {
 model User {
   id        Int      @id @default(autoincrement())
   username  String   @unique
-  email     String   @unique
+  email     String?  @unique
   password  String
   role      UserRole @default(patient)
   fullName  String   @map("full_name")
@@ -36,13 +36,12 @@ model User {
 }
 
 model DoctorProfile {
-  id              Int      @id @default(autoincrement())
-  userId          Int      @unique // Unique constraint ensures one-to-one
+  id              Int    @id @default(autoincrement())
+  userId          Int    @unique @map("user_id")
   specialization  String
   bio             String?
-  consultationFee Float?
-  experienceYears Int?
-  createdAt       DateTime @default(now())
+  consultationFee Int    @map("consultation_fee")
+  experienceYears Int    @default(0) @map("experience_years")
 
   // This relation field links the DoctorProfile to a User
   user User @relation(fields: [userId], references: [id])
@@ -51,13 +50,13 @@ model DoctorProfile {
 }
 
 enum DayOfWeek {
-  monday
-  tuesday
-  wednesday
-  thursday
-  friday
-  saturday
-  sunday
+  Monday
+  Tuesday
+  Wednesday
+  Thursday
+  Friday
+  Saturday
+  Sunday
 }
 
 model Schedule {
@@ -75,16 +74,16 @@ model Schedule {
 
 enum AppointmentStatus {
   pending
-  confirmed
+  accepted
   cancelled
-  completed
+  done
 }
 
 model Appointment {
   id        Int               @id @default(autoincrement())
   patientId Int               @map("patient_id")
   doctorId  Int               @map("doctor_id")
-  date      DateTime
+  date      DateTime          @db.Date
   startTime String            @map("start_time")
   endTime   String            @map("end_time")
   status    AppointmentStatus @default(pending)
