@@ -15,23 +15,50 @@ export async function requireAuth(
   res: Response,
   next: NextFunction
 ) {
-  const token = req.headers.authorization?.replace("Bearer ", "");
+  try {
+    const token = req.headers.authorization?.replace("Bearer ", "");
 
-  if (!token) return res.status(401).send("Unauthorized");
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
 
-  const decoded: any = verifyToken(token);
+    const decoded = verifyToken(token) as { userId?: number };
 
-  const user = await prisma.user.findUnique({
-    where: { id: decoded.userId },
-    select: {
-      id: true,
-      email: true,
-      username: true,
-      role: true,
-      fullName: true,
-    },
-  });
+    if (!decoded.userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token",
+      });
+    }
 
-  req.user = user;
-  next();
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        role: true,
+        fullName: true,
+        isActive: true,
+      },
+    });
+
+    if (!user || !user.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+
+    req.user = user;
+    next();
+  } catch (_error) {
+    return res.status(401).json({
+      success: false,
+      message: "Invalid or expired token",
+    });
+  }
 }

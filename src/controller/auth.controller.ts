@@ -48,6 +48,8 @@ export async function register(req: Request, res: Response) {
  */
 export async function logout(req: Request, res: Response) {
   try {
+    await authService.logout();
+
     res.clearCookie("token");
 
     res.status(200).json({
@@ -69,15 +71,17 @@ export async function logout(req: Request, res: Response) {
  */
 export async function me(req: Request, res: Response) {
   try {
+    const user = await authService.getMe(req.user?.id);
+
     res.status(200).json({
       success: true,
       message: "User fetched successfully",
-      data: req.user ?? null,
+      data: user,
     });
   } catch (error: any) {
-    res.status(500).json({
+    res.status(404).json({
       success: false,
-      message: "Failed to fetch user",
+      message: error.message || "Failed to fetch user",
       data: null,
     });
   }

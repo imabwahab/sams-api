@@ -33,5 +33,6 @@ router.post(
 );
 router.post("/logout", requireAuth, controller.logout);
 router.get("/user", requireAuth, controller.me);
+router.get("/me", requireAuth, controller.me);
 
 export default router;

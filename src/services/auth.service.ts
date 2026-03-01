@@ -70,7 +70,7 @@ export async function register(data: any) {
       username: data.username,
       password: hashedPassword,
       fullName: data.fullName,
-      role: data.specialization ? "doctor" : "patient",
+      role: data.role,
     },
   });
 
@@ -94,6 +94,38 @@ export async function register(data: any) {
     role: user.role,
     fullName: user.fullName,
   };
+}
+
+export async function getMe(userId: number) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      email: true,
+      username: true,
+      role: true,
+      fullName: true,
+      isActive: true,
+      doctorProfile: {
+        select: {
+          specialization: true,
+          bio: true,
+          consultationFee: true,
+          experienceYears: true,
+        },
+      },
+    },
+  });
+
+  if (!user || !user.isActive) {
+    throw new Error("User not found");
+  }
+
+  return user;
+}
+
+export async function logout() {
+  return true;
 }
 
 export async function requestPasswordReset(data: ForgotPasswordPayload) {
