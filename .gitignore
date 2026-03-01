@@ -17,5 +17,6 @@ src/generated
 
 #!.yarn/cache
 .pnp.*
+dist/
 
 /generated/prisma
