@@ -7,20 +7,20 @@ import {
 
 test("createScheduleSchema accepts valid payload", () => {
   const parsed = createScheduleSchema.parse({
-    dayOfWeek: "monday",
+    dayOfWeek: "Monday",
     startTime: "09:00",
     endTime: "10:00",
     isAvailable: true,
   });
 
-  assert.equal(parsed.dayOfWeek, "monday");
+  assert.equal(parsed.dayOfWeek, "Monday");
 });
 
 test("createScheduleSchema rejects invalid time range", () => {
   assert.throws(
     () =>
       createScheduleSchema.parse({
-        dayOfWeek: "monday",
+        dayOfWeek: "Monday",
         startTime: "10:00",
         endTime: "09:00",
       }),

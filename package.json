@@ -5,16 +5,20 @@
     "dev": "nodemon",
     "build": "tsc",
     "lint": "tsc --noEmit",
-    "test": "npm run build && node --test dist/validator/schedule.validator.test.js",
+    "test": "npm run build && node --test \"dist/**/*.test.js\"",
     "start": "node dist/index.js"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.3.0",
     "@prisma/client": "^7.3.0",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.8",
     "bcrypt": "^6.0.0",
     "dotenv": "^17.2.4",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "zod": "^4.3.6"
   },
   "devDependencies": {
