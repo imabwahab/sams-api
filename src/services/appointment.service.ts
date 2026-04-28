@@ -1,4 +1,4 @@
-import { AppointmentStatus } from "../generated/prisma";
+import { AppointmentStatus, Prisma } from "../generated/prisma";
 import prisma from "../lib/prisma";
 import {
   CreateAppointmentInput,
@@ -24,6 +24,27 @@ export class AppointmentServiceError extends Error {
 
 function toDateOnly(date: string): Date {
   return new Date(`${date}T00:00:00.000Z`);
+}
+
+async function updateMatchingScheduleAvailability(
+  tx: Omit<Prisma.TransactionClient, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">,
+  doctorId: number,
+  date: string,
+  startTime: string,
+  endTime: string,
+  isAvailable: boolean
+) {
+  await tx.schedule.updateMany({
+    where: {
+      doctorId,
+      date: toDateOnly(date),
+      startTime,
+      endTime,
+    },
+    data: {
+      isAvailable,
+    },
+  });
 }
 
 function getScopedWhere(actor: UserActor) {
@@ -184,17 +205,49 @@ export const appointmentService = {
       }
     }
 
-    return prisma.appointment.update({
-      where: { id },
-      data: {
-        ...(data.date ? { date: toDateOnly(data.date) } : {}),
-        ...(data.startTime ? { startTime: data.startTime } : {}),
-        ...(data.endTime ? { endTime: data.endTime } : {}),
-        ...(data.status ? { status: data.status } : {}),
-        ...(Object.prototype.hasOwnProperty.call(data, "notes")
-          ? { notes: data.notes ?? null }
-          : {}),
-      },
+    const nextStatus = data.status ?? current.status;
+    const currentDate = current.date.toISOString().slice(0, 10);
+
+    return prisma.$transaction(async (tx) => {
+      if (
+        current.status === "accepted" &&
+        (nextStatus !== "accepted" || slotChanged)
+      ) {
+        await updateMatchingScheduleAvailability(
+          tx,
+          current.doctorId,
+          currentDate,
+          current.startTime,
+          current.endTime,
+          true
+        );
+      }
+
+      const appointment = await tx.appointment.update({
+        where: { id },
+        data: {
+          ...(data.date ? { date: toDateOnly(data.date) } : {}),
+          ...(data.startTime ? { startTime: data.startTime } : {}),
+          ...(data.endTime ? { endTime: data.endTime } : {}),
+          ...(data.status ? { status: data.status } : {}),
+          ...(Object.prototype.hasOwnProperty.call(data, "notes")
+            ? { notes: data.notes ?? null }
+            : {}),
+        },
+      });
+
+      if (nextStatus === "accepted") {
+        await updateMatchingScheduleAvailability(
+          tx,
+          appointment.doctorId,
+          nextDate,
+          nextStartTime,
+          nextEndTime,
+          false
+        );
+      }
+
+      return appointment;
     });
   },
 
