@@ -62,6 +62,7 @@ enum DayOfWeek {
 model Schedule {
   id          Int       @id @default(autoincrement())
   doctorId    Int       @map("doctor_id")
+  date        DateTime? @db.Date
   dayOfWeek   DayOfWeek @map("day_of_week")
   startTime   String    @map("start_time") // "HH:mm"
   endTime     String    @map("end_time") // "HH:mm"
