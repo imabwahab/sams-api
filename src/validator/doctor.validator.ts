@@ -87,6 +87,27 @@ export const updateDoctorSchema = z
     message: "At least one field must be provided",
   });
 
+export const updateOwnDoctorSchema = z
+  .object({
+    username: usernameSchema.optional(),
+    email: emailSchema.optional(),
+    fullName: z
+      .string()
+      .trim()
+      .min(2, "Full name must be at least 2 characters")
+      .max(120, "Full name cannot exceed 120 characters")
+      .optional(),
+    phone: phoneSchema.nullable().optional(),
+    specialization: specializationSchema.optional(),
+    bio: bioSchema.nullable().optional(),
+    consultationFee: z.coerce.number().positive().optional(),
+    experienceYears: z.coerce.number().int().min(0).max(70).optional(),
+  })
+  .refine((value) => Object.keys(value).length > 0, {
+    message: "At least one field must be provided",
+  });
+
 export type ListDoctorsQueryInput = z.infer<typeof listDoctorsQuerySchema>;
 export type CreateDoctorInput = z.infer<typeof createDoctorSchema>;
 export type UpdateDoctorInput = z.infer<typeof updateDoctorSchema>;
+export type UpdateOwnDoctorInput = z.infer<typeof updateOwnDoctorSchema>;

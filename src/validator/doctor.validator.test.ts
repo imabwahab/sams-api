@@ -5,6 +5,7 @@ import {
   doctorIdParamSchema,
   listDoctorsQuerySchema,
   updateDoctorSchema,
+  updateOwnDoctorSchema,
 } from "./doctor.validator";
 
 test("createDoctorSchema accepts valid payload", () => {
@@ -38,6 +39,13 @@ test("createDoctorSchema rejects invalid username", () => {
 
 test("updateDoctorSchema rejects empty payload", () => {
   assert.throws(() => updateDoctorSchema.parse({}), /At least one field/);
+});
+
+test("updateOwnDoctorSchema rejects isActive updates", () => {
+  assert.throws(
+    () => updateOwnDoctorSchema.parse({ isActive: false }),
+    /At least one field/
+  );
 });
 
 test("doctorIdParamSchema coerces id", () => {

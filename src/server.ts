@@ -1,4 +1,4 @@
-import express, { Request, Response } from "express";
+import express, { NextFunction, Request, Response } from "express";
 import swaggerUi from "swagger-ui-express";
 import authRoutes from "./routes/auth.route";
 import scheduleRoutes from "./routes/schedule.route";
@@ -8,6 +8,36 @@ import adminRoutes from "./routes/admin.route";
 import { swaggerSpec } from "./swagger";
 
 const app = express();
+const frontendOrigin = process.env.FRONTEND_URL || "http://localhost:3000";
+
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const startedAt = Date.now();
+
+  res.on("finish", () => {
+    const durationMs = Date.now() - startedAt;
+    console.log(
+      `[${new Date().toISOString()}] ${req.method} ${req.originalUrl} ${res.statusCode} ${durationMs}ms`
+    );
+  });
+
+  next();
+});
+
+app.use((req: Request, res: Response, next: NextFunction) => {
+  res.header("Access-Control-Allow-Origin", frontendOrigin);
+  res.header("Vary", "Origin");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.header(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PATCH, PUT, DELETE, OPTIONS"
+  );
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+
+  next();
+});
 
 app.use(express.json());
 

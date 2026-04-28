@@ -43,6 +43,33 @@ router.get("/doctors", doctorController.list);
 
 /**
  * @swagger
+ * /api/doctors/me:
+ *   get:
+ *     tags: [doctor]
+ *     summary: Get current doctor profile
+ *     description: Returns the authenticated doctor's current profile information.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Doctor profile fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 message: { type: string, example: Doctor profile fetched successfully }
+ *                 data: { $ref: '#/components/schemas/DoctorSelfProfile' }
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Doctor not found
+ */
+router.get("/doctors/me", requireAuth, doctorController.getMe);
+
+/**
+ * @swagger
  * /api/doctors/{id}:
  *   get:
  *     tags: [doctor]
@@ -90,6 +117,43 @@ router.get("/doctors/:id", doctorController.getOne);
  *         description: Username/email conflict
  */
 router.post("/doctors", requireAuth, doctorController.create);
+
+/**
+ * @swagger
+ * /api/doctors/me:
+ *   patch:
+ *     tags: [doctor]
+ *     summary: Update current doctor profile
+ *     description: Updates the authenticated doctor's own profile information.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateOwnDoctorRequest'
+ *     responses:
+ *       200:
+ *         description: Doctor profile updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 message: { type: string, example: Doctor profile updated successfully }
+ *                 data: { $ref: '#/components/schemas/DoctorSelfProfile' }
+ *       400:
+ *         description: Validation/business error
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Doctor not found
+ *       409:
+ *         description: Username/email conflict
+ */
+router.patch("/doctors/me", requireAuth, doctorController.updateMe);
 
 /**
  * @swagger

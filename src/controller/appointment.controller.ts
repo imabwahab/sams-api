@@ -24,6 +24,8 @@ function success(res: Response, message: string, data: unknown, statusCode = 200
 }
 
 function handleError(error: unknown, res: Response) {
+  console.error("[appointmentController]", error);
+
   if (error instanceof z.ZodError) {
     return res.status(400).json({
       success: false,

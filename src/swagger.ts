@@ -1,5 +1,9 @@
+import "dotenv/config";
 import path from "path";
 import swaggerJsdoc from "swagger-jsdoc";
+
+const port = process.env.PORT || "3000";
+const swaggerServerUrl = process.env.SERVER_URL || `http://localhost:${port}`;
 
 const swaggerOptions: swaggerJsdoc.Options = {
   definition: {
@@ -12,7 +16,7 @@ const swaggerOptions: swaggerJsdoc.Options = {
     },
     servers: [
       {
-        url: "http://localhost:3000",
+        url: swaggerServerUrl,
         description: "Local development server",
       },
     ],
@@ -53,7 +57,11 @@ const swaggerOptions: swaggerJsdoc.Options = {
               example: "patient",
             },
             fullName: { type: "string", example: "John Doe" },
-            token: { type: "string", example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." },
+            token: {
+              type: "string",
+              example:
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsInJvbGUiOiJwYXRpZW50IiwiaWF0IjoxNzcyOTA2NzU1LCJleHAiOjE3NzM1MTE1NTV9.dGVzdF9zaWduYXR1cmVfdmFsdWVfZm9yX3N3YWdnZXJfZXhhbXBsZQ",
+            },
           },
           required: ["id", "username", "role", "fullName"],
         },
@@ -109,11 +117,26 @@ const swaggerOptions: swaggerJsdoc.Options = {
             doctorProfile: { $ref: "#/components/schemas/DoctorProfile" },
           },
         },
+        DoctorSelfProfile: {
+          allOf: [
+            { $ref: "#/components/schemas/Doctor" },
+            {
+              type: "object",
+              properties: {
+                specialization: { type: "string", nullable: true, example: "Cardiology" },
+                bio: { type: "string", nullable: true, example: "10+ years of experience." },
+                consultationFee: { type: "integer", nullable: true, example: 3000 },
+                experienceYears: { type: "integer", nullable: true, example: 10 },
+              },
+            },
+          ],
+        },
         Schedule: {
           type: "object",
           properties: {
             id: { type: "integer", example: 4 },
             doctorId: { type: "integer", example: 10 },
+            date: { type: "string", format: "date", nullable: true, example: "2026-03-10" },
             dayOfWeek: {
               type: "string",
               enum: [
@@ -277,9 +300,23 @@ const swaggerOptions: swaggerJsdoc.Options = {
             isActive: { type: "boolean", example: true },
           },
         },
+        UpdateOwnDoctorRequest: {
+          type: "object",
+          properties: {
+            username: { type: "string", example: "dr_khan2" },
+            email: { type: "string", format: "email", example: "dr.khan2@example.com" },
+            fullName: { type: "string", example: "Dr. K. Khan" },
+            phone: { type: "string", nullable: true, example: "+923001112224" },
+            specialization: { type: "string", example: "Dermatology" },
+            bio: { type: "string", nullable: true, example: "Updated bio." },
+            consultationFee: { type: "number", example: 2800 },
+            experienceYears: { type: "number", example: 8 },
+          },
+        },
         CreateScheduleRequest: {
           type: "object",
           properties: {
+            date: { type: "string", format: "date", example: "2026-03-10" },
             dayOfWeek: {
               type: "string",
               enum: [
@@ -296,11 +333,12 @@ const swaggerOptions: swaggerJsdoc.Options = {
             endTime: { type: "string", example: "12:00" },
             isAvailable: { type: "boolean", example: true },
           },
-          required: ["dayOfWeek", "startTime", "endTime"],
+          required: ["date", "startTime", "endTime"],
         },
         UpdateScheduleRequest: {
           type: "object",
           properties: {
+            date: { type: "string", format: "date", example: "2026-03-11" },
             dayOfWeek: {
               type: "string",
               enum: [

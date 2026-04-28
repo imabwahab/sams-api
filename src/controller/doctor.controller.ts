@@ -5,6 +5,7 @@ import {
   doctorIdParamSchema,
   listDoctorsQuerySchema,
   updateDoctorSchema,
+  updateOwnDoctorSchema,
 } from "../validator/doctor.validator";
 import {
   DoctorServiceError,
@@ -21,6 +22,16 @@ function success(res: Response, message: string, data: unknown, statusCode = 200
     message,
     data,
   });
+}
+
+function mapDoctorProfileFields<T extends { doctorProfile?: any }>(doctor: T) {
+  return {
+    ...doctor,
+    specialization: doctor.doctorProfile?.specialization ?? null,
+    bio: doctor.doctorProfile?.bio ?? null,
+    consultationFee: doctor.doctorProfile?.consultationFee ?? null,
+    experienceYears: doctor.doctorProfile?.experienceYears ?? null,
+  };
 }
 
 function handleError(error: unknown, res: Response) {
@@ -81,6 +92,27 @@ export const doctorController = {
     }
   },
 
+  async getMe(req: Request, res: Response) {
+    try {
+      if (!req.user || req.user.role !== "doctor") {
+        return res.status(401).json({
+          success: false,
+          message: "Unauthorized",
+          data: null,
+        });
+      }
+
+      const doctor = await doctorService.getOwnDoctorById(req.user.id);
+      return success(
+        res,
+        "Doctor profile fetched successfully",
+        mapDoctorProfileFields(doctor)
+      );
+    } catch (error) {
+      return handleError(error, res);
+    }
+  },
+
   async create(req: Request, res: Response) {
     try {
       if (!ensureAdmin(req, res)) return;
@@ -101,6 +133,28 @@ export const doctorController = {
       const parsed = updateDoctorSchema.parse(req.body);
       const doctor = await doctorService.updateDoctor(id, parsed);
       return success(res, "Doctor updated successfully", doctor);
+    } catch (error) {
+      return handleError(error, res);
+    }
+  },
+
+  async updateMe(req: Request, res: Response) {
+    try {
+      if (!req.user || req.user.role !== "doctor") {
+        return res.status(401).json({
+          success: false,
+          message: "Unauthorized",
+          data: null,
+        });
+      }
+
+      const parsed = updateOwnDoctorSchema.parse(req.body);
+      const doctor = await doctorService.updateOwnDoctor(req.user.id, parsed);
+      return success(
+        res,
+        "Doctor profile updated successfully",
+        mapDoctorProfileFields(doctor)
+      );
     } catch (error) {
       return handleError(error, res);
     }

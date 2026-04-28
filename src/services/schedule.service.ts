@@ -21,6 +21,24 @@ type RangeInput = {
   endTime: string;
 };
 
+function toDateOnly(date: string): Date {
+  return new Date(`${date}T00:00:00.000Z`);
+}
+
+function toDayOfWeek(date: string) {
+  const weekdays = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ] as const;
+
+  return weekdays[new Date(`${date}T00:00:00.000Z`).getUTCDay()];
+}
+
 function hasOverlap(candidate: RangeInput, existingRanges: RangeInput[]): boolean {
   const candidateStart = candidate.startTime;
   const candidateEnd = candidate.endTime;
@@ -46,7 +64,7 @@ export const scheduleService = {
 
     return prisma.schedule.findMany({
       where: { doctorId },
-      orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
+      orderBy: [{ date: "asc" }, { startTime: "asc" }, { dayOfWeek: "asc" }],
     });
   },
 
@@ -73,7 +91,7 @@ export const scheduleService = {
     }
 
     const existingSchedules = await prisma.schedule.findMany({
-      where: { doctorId, dayOfWeek: data.dayOfWeek },
+      where: { doctorId, date: toDateOnly(data.date) },
       select: { id: true, startTime: true, endTime: true },
     });
 
@@ -92,7 +110,11 @@ export const scheduleService = {
     return prisma.schedule.create({
       data: {
         doctorId,
-        ...data,
+        date: toDateOnly(data.date),
+        dayOfWeek: toDayOfWeek(data.date),
+        startTime: data.startTime,
+        endTime: data.endTime,
+        ...(data.isAvailable !== undefined ? { isAvailable: data.isAvailable } : {}),
       },
     });
   },
@@ -110,7 +132,12 @@ export const scheduleService = {
       throw new ScheduleServiceError("Schedule not found", 404);
     }
 
-    const nextDayOfWeek = data.dayOfWeek ?? schedule.dayOfWeek;
+    const nextDate = data.date
+      ? toDateOnly(data.date)
+      : schedule.date;
+    const nextDayOfWeek = data.date
+      ? toDayOfWeek(data.date)
+      : data.dayOfWeek ?? schedule.dayOfWeek;
     const nextStartTime = data.startTime ?? schedule.startTime;
     const nextEndTime = data.endTime ?? schedule.endTime;
 
@@ -121,7 +148,9 @@ export const scheduleService = {
     const existingSchedules = await prisma.schedule.findMany({
       where: {
         doctorId,
-        dayOfWeek: nextDayOfWeek,
+        ...(nextDate
+          ? { date: nextDate }
+          : { dayOfWeek: nextDayOfWeek }),
         id: { not: scheduleId },
       },
       select: { id: true, startTime: true, endTime: true },
@@ -142,7 +171,11 @@ export const scheduleService = {
     return prisma.schedule.update({
       where: { id: scheduleId },
       data: {
-        ...data,
+        ...(data.date ? { date: toDateOnly(data.date), dayOfWeek: toDayOfWeek(data.date) } : {}),
+        ...(data.dayOfWeek && !data.date ? { dayOfWeek: data.dayOfWeek } : {}),
+        ...(data.startTime ? { startTime: data.startTime } : {}),
+        ...(data.endTime ? { endTime: data.endTime } : {}),
+        ...(data.isAvailable !== undefined ? { isAvailable: data.isAvailable } : {}),
       },
     });
   },
