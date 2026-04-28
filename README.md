@@ -369,7 +369,22 @@ Optional query params:
 | `specialization` | string | Filter by specialization |
 | `search` | string | Search in name, username, or email |
 
-### 2.2 Get Doctor By ID
+### 2.2 Get Current Doctor
+
+- Method: `GET`
+- Endpoint: `/doctors/me`
+- Access: Protected, `doctor` only
+- Request body: None
+
+Behavior:
+- Returns the currently logged-in doctor's profile from the database.
+- Also returns these top-level profile fields when available:
+  - `specialization`
+  - `bio`
+  - `consultationFee`
+  - `experienceYears`
+
+### 2.3 Get Doctor By ID
 
 - Method: `GET`
 - Endpoint: `/doctors/:id`
@@ -382,7 +397,7 @@ Path params:
 |---|---|---|
 | `id` | number | Doctor user id |
 
-### 2.3 Create Doctor
+### 2.4 Create Doctor
 
 - Method: `POST`
 - Endpoint: `/doctors`
@@ -420,7 +435,47 @@ Required fields:
 | `experienceYears` | number | No | Whole number, 0 to 70 |
 | `isActive` | boolean | No | Defaults to `true` |
 
-### 2.4 Update Doctor
+### 2.5 Update Current Doctor
+
+- Method: `PATCH`
+- Endpoint: `/doctors/me`
+- Access: Protected, `doctor` only
+
+Request body example:
+
+```json
+{
+  "fullName": "Dr. K. Khan",
+  "consultationFee": 2800,
+  "experienceYears": 8,
+  "bio": "Updated bio."
+}
+```
+
+Allowed fields:
+
+| Field | Type |
+|---|---|
+| `username` | string |
+| `email` | string |
+| `fullName` | string |
+| `phone` | string or null |
+| `specialization` | string |
+| `bio` | string or null |
+| `consultationFee` | number |
+| `experienceYears` | number |
+
+Rules:
+- Only the authenticated doctor can update this endpoint.
+- At least one field must be provided.
+- `phone` can be `null`.
+- `bio` can be `null`.
+- Doctors cannot change `isActive` from this endpoint.
+
+Response:
+- Returns the updated doctor record and also includes top-level `specialization`, `bio`, `consultationFee`, and `experienceYears`.
+
+### 2.6 Update Doctor
 
 - Method: `PATCH`
 - Endpoint: `/doctors/:id`
@@ -456,7 +511,7 @@ Allowed fields:
 | `experienceYears` | number |
 | `isActive` | boolean |
 
-### 2.5 Delete Doctor
+### 2.7 Delete Doctor
 
 - Method: `DELETE`
 - Endpoint: `/doctors/:id`
@@ -500,7 +555,7 @@ Request body:
 
 ```json
 {
-  "dayOfWeek": "Monday",
+  "date": "2026-03-10",
   "startTime": "09:00",
   "endTime": "12:00",
   "isAvailable": true
@@ -511,14 +566,16 @@ Required fields:
 
 | Field | Type | Required | Notes |
 |---|---|---|---|
-| `dayOfWeek` | string | Yes | One of `Monday` to `Sunday` |
+| `date` | string | Yes | Format `YYYY-MM-DD` |
+| `dayOfWeek` | string | No | Optional, but if sent it must match the provided `date` |
 | `startTime` | string | Yes | Format `HH:mm` |
 | `endTime` | string | Yes | Format `HH:mm`, must be later than `startTime` |
 | `isAvailable` | boolean | No | Defaults to `true` |
 
 Rules:
 - Only the authenticated doctor can create their own schedule.
-- Overlapping schedules on the same day are rejected.
+- Overlapping schedules on the same date are rejected.
+- The stored `dayOfWeek` is derived from the selected `date`.
 
 ### 3.4 Update Schedule
 
@@ -530,6 +587,7 @@ Request body example:
 
 ```json
 {
+  "date": "2026-03-10",
   "startTime": "10:00",
   "endTime": "13:00",
   "isAvailable": true
@@ -545,6 +603,7 @@ Allowed fields:
 
 | Field | Type |
 |---|---|
+| `date` | string |
 | `dayOfWeek` | string |
 | `startTime` | string |
 | `endTime` | string |
@@ -654,6 +713,7 @@ Rules:
 - Patient, doctor, and admin can update if authorized.
 - Patients cannot change appointment `status`.
 - Updated time slot must remain available.
+- When an appointment becomes `accepted`, the matching doctor schedule slot for that weekday and exact time range is marked as unavailable.
 
 ### 4.5 Delete Appointment
 
