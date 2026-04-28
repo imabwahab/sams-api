@@ -33,6 +33,17 @@ type UpdateDoctorInput = {
   isActive?: boolean;
 };
 
+type UpdateOwnDoctorInput = {
+  username?: string;
+  email?: string;
+  fullName?: string;
+  phone?: string | null;
+  specialization?: string;
+  bio?: string | null;
+  consultationFee?: number;
+  experienceYears?: number;
+};
+
 export class DoctorServiceError extends Error {
   statusCode: number;
 
@@ -115,6 +126,23 @@ export const doctorService = {
         createdAt: "desc",
       },
     });
+  },
+
+  async getOwnDoctorById(id: number): Promise<DoctorModel> {
+    const doctor = await prisma.user.findFirst({
+      where: {
+        id,
+        role: "doctor",
+        isActive: true,
+      },
+      select: doctorSelect,
+    });
+
+    if (!doctor) {
+      throw new DoctorServiceError("Doctor not found", 404);
+    }
+
+    return doctor;
   },
 
   async getDoctorById(id: number): Promise<DoctorWithSchedulesModel> {
@@ -208,6 +236,107 @@ export const doctorService = {
     if (data.fullName !== undefined) userData.fullName = data.fullName;
     if (data.phone !== undefined) userData.phone = data.phone;
     if (data.isActive !== undefined) userData.isActive = data.isActive;
+
+    const profileData: Prisma.DoctorProfileUpdateInput = {};
+    if (data.specialization !== undefined) {
+      profileData.specialization = data.specialization;
+    }
+    if (data.bio !== undefined) profileData.bio = data.bio;
+    if (data.consultationFee !== undefined) {
+      profileData.consultationFee = data.consultationFee;
+    }
+    if (data.experienceYears !== undefined) {
+      profileData.experienceYears = data.experienceYears;
+    }
+
+    const hasProfileUpdates = Object.keys(profileData).length > 0;
+    const hasUserUpdates = Object.keys(userData).length > 0;
+
+    if (!hasProfileUpdates && !hasUserUpdates) {
+      throw new DoctorServiceError("At least one field must be provided", 400);
+    }
+
+    const nextSpecialization =
+      data.specialization ?? existing.doctorProfile?.specialization;
+    const nextConsultationFee =
+      data.consultationFee ?? existing.doctorProfile?.consultationFee;
+    const nextExperienceYears =
+      data.experienceYears ?? existing.doctorProfile?.experienceYears ?? 0;
+
+    if (!nextSpecialization) {
+      throw new DoctorServiceError(
+        "Specialization is required for doctor profile",
+        400
+      );
+    }
+    if (nextConsultationFee === undefined) {
+      throw new DoctorServiceError(
+        "Consultation fee is required for doctor profile",
+        400
+      );
+    }
+
+    try {
+      return prisma.user.update({
+        where: { id },
+        data: {
+          ...userData,
+          ...(hasProfileUpdates
+            ? {
+                doctorProfile: {
+                  upsert: {
+                    update: profileData,
+                    create: {
+                      specialization: nextSpecialization,
+                      bio: data.bio ?? null,
+                      consultationFee: nextConsultationFee,
+                      experienceYears: nextExperienceYears,
+                    },
+                  },
+                },
+              }
+            : {}),
+        },
+        select: doctorSelect,
+      });
+    } catch (error) {
+      if (isUniqueConstraintError(error)) {
+        throw new DoctorServiceError("Username or email already exists", 409);
+      }
+
+      throw error;
+    }
+  },
+
+  async updateOwnDoctor(id: number, data: UpdateOwnDoctorInput) {
+    const existing = await prisma.user.findFirst({
+      where: {
+        id,
+        role: "doctor",
+        isActive: true,
+      },
+      select: {
+        id: true,
+        doctorProfile: {
+          select: {
+            id: true,
+            specialization: true,
+            consultationFee: true,
+            experienceYears: true,
+          },
+        },
+      },
+    });
+
+    if (!existing) {
+      throw new DoctorServiceError("Doctor not found", 404);
+    }
+
+    const userData: Prisma.UserUpdateInput = {};
+    if (data.username !== undefined) userData.username = data.username;
+    if (data.email !== undefined) userData.email = data.email.toLowerCase();
+    if (data.fullName !== undefined) userData.fullName = data.fullName;
+    if (data.phone !== undefined) userData.phone = data.phone;
 
     const profileData: Prisma.DoctorProfileUpdateInput = {};
     if (data.specialization !== undefined) {
