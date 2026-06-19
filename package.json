@@ -3,7 +3,7 @@
   "type": "commonjs",
   "scripts": {
     "dev": "nodemon",
-    "build": "tsc",
+    "build": "tsc && node -e \"require('fs').cpSync('src/generated','dist/generated',{recursive:true})\"",
     "lint": "tsc --noEmit",
     "test": "npm run build && node --test \"dist/**/*.test.js\"",
     "start": "node dist/index.js",
