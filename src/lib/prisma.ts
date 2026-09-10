@@ -88,6 +88,13 @@ console.log(
   `[db] ${config.host}:${config.port}/${config.database} tls=${config.ssl ? "on" : "off"}`
 );
 
+// mariadb defaults acquireTimeout and connectTimeout to 10s. That is not enough
+// when the app and the database sit in different regions: establishing a TLS
+// connection costs several round trips, and every request that overruns fails
+// with "pool timeout ... active=0 idle=0" rather than simply being slow.
+const ACQUIRE_TIMEOUT_MS = Number(process.env.DATABASE_ACQUIRE_TIMEOUT_MS ?? 30000);
+const CONNECT_TIMEOUT_MS = Number(process.env.DATABASE_CONNECT_TIMEOUT_MS ?? 20000);
+
 const adapter = new PrismaMariaDb({
   host: config.host,
   port: config.port,
@@ -95,6 +102,11 @@ const adapter = new PrismaMariaDb({
   password: config.password,
   database: config.database,
   connectionLimit: 5,
+  acquireTimeout: ACQUIRE_TIMEOUT_MS,
+  connectTimeout: CONNECT_TIMEOUT_MS,
+  // Hold one connection open so requests after an idle period do not each pay
+  // the full handshake cost.
+  minimumIdle: 1,
   ssl: config.ssl ? { minVersion: "TLSv1.2", rejectUnauthorized: true } : undefined,
 });
 

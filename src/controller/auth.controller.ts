@@ -30,6 +30,8 @@ export async function login(req: Request, res: Response) {
  * first use. 401 rather than 400: the token itself is what failed to verify.
  */
 export async function googleLogin(req: Request, res: Response) {
+  const startedAt = Date.now();
+
   try {
     const user = await oauthService.loginWithGoogle(req.body.idToken);
 
@@ -39,6 +41,13 @@ export async function googleLogin(req: Request, res: Response) {
       data: user,
     });
   } catch (error: any) {
+    // Logged as well as returned: the request log only records status and
+    // duration, so without this a failure here is invisible in production.
+    console.error(
+      `[auth][google] failed after ${Date.now() - startedAt}ms:`,
+      error?.message ?? error
+    );
+
     res.status(401).json({
       success: false,
       message: error.message || "Google sign-in failed",
