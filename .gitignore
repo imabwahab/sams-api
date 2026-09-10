@@ -20,3 +20,6 @@ src/generated
 dist/
 
 /generated/prisma
+
+# Local env backups (never commit - contain real secrets)
+*.bak

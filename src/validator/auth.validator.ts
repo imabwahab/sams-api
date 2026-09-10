@@ -14,6 +14,16 @@ export const loginSchema = z.object({
 });
 
 
+/*  GOOGLE OAUTH  */
+
+export const googleLoginSchema = z.object({
+  idToken: z
+    .string()
+    .trim()
+    .min(1, "Google ID token is required"),
+});
+
+
 /*  REGISTER  */
 
 export const registerSchema = z

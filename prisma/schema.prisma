@@ -17,7 +17,9 @@ model User {
   id        Int      @id @default(autoincrement())
   username  String   @unique
   email     String?  @unique
-  password  String
+  // Nullable: accounts created through an OAuth provider have no password.
+  // Any bcrypt.compare must guard against null first.
+  password  String?
   role      UserRole @default(patient)
   fullName  String   @map("full_name")
   phone     String?
@@ -27,12 +29,30 @@ model User {
   // Add the back-reference relation here
   doctorProfile DoctorProfile? // Optional one-to-one relation to DoctorProfile
 
+  accounts Account[]
+
   schedules Schedule[]
 
   patientAppointments Appointment[] @relation("PatientAppointments")
   doctorAppointments  Appointment[] @relation("DoctorAppointments")
 
   @@map("users")
+}
+
+// Links a User to an external identity provider (currently only "google").
+// One User can have several accounts, so a password user can also link Google.
+model Account {
+  id                Int      @id @default(autoincrement())
+  userId            Int      @map("user_id")
+  provider          String
+  providerAccountId String   @map("provider_account_id")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
 }
 
 model DoctorProfile {

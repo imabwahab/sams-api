@@ -7,6 +7,7 @@ import { validate } from "../middleware/validate";
 import {
   changePasswordSchema,
   forgotPasswordSchema,
+  googleLoginSchema,
   loginSchema,
   registerSchema,
   resetPasswordSchema,
@@ -45,6 +46,51 @@ import { requireAuth } from "../middleware/auth.middleware";
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post("/login", validate(loginSchema), controller.login);
+
+/**
+ * @swagger
+ * /api/auth/oauth/google:
+ *   post:
+ *     tags: [auth]
+ *     summary: Login with Google
+ *     description: >
+ *       Exchanges a Google-issued ID token for a SAMS JWT. On first use the
+ *       account is created (always with the patient role) or linked to an
+ *       existing user with the same verified email.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [idToken]
+ *             properties:
+ *               idToken:
+ *                 type: string
+ *                 description: The id_token returned by Google.
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 message: { type: string, example: Login successful }
+ *                 data: { $ref: '#/components/schemas/AuthUser' }
+ *       401:
+ *         description: Token invalid, unverified email, or account deactivated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.post(
+  "/oauth/google",
+  validate(googleLoginSchema),
+  controller.googleLogin
+);
 
 /**
  * @swagger

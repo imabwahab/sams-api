@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import * as authService from "../services/auth.service";
+import * as oauthService from "../services/oauth.service";
 
 /**
  * LOGIN
@@ -17,6 +18,30 @@ export async function login(req: Request, res: Response) {
     res.status(400).json({
       success: false,
       message: error.message || "Login failed",
+      data: null,
+    });
+  }
+}
+
+/**
+ * GOOGLE LOGIN
+ *
+ * Exchanges a Google ID token for a SAMS JWT. Creates or links the account on
+ * first use. 401 rather than 400: the token itself is what failed to verify.
+ */
+export async function googleLogin(req: Request, res: Response) {
+  try {
+    const user = await oauthService.loginWithGoogle(req.body.idToken);
+
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      data: user,
+    });
+  } catch (error: any) {
+    res.status(401).json({
+      success: false,
+      message: error.message || "Google sign-in failed",
       data: null,
     });
   }

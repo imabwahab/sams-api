@@ -34,6 +34,11 @@ export async function login(data: { username: string; password: string }) {
     throw new Error("Invalid credentials");
   }
 
+  // OAuth-only account: no password is set, so password login can never succeed.
+  if (!user.password) {
+    throw new Error("Invalid credentials");
+  }
+
   const valid = await bcrypt.compare(data.password, user.password);
   if (!valid) {
     throw new Error("Invalid credentials");
@@ -173,9 +178,13 @@ export async function resetPassword(data: ResetPasswordPayload) {
     throw new Error("Invalid or expired reset token");
   }
 
-  const samePassword = await bcrypt.compare(data.newPassword, user.password);
-  if (samePassword) {
-    throw new Error("New password must be different from current password");
+  // An OAuth-only account has no existing password to differ from — this is
+  // how a Google user adds password login to their account.
+  if (user.password) {
+    const samePassword = await bcrypt.compare(data.newPassword, user.password);
+    if (samePassword) {
+      throw new Error("New password must be different from current password");
+    }
   }
 
   const hashedPassword = await bcrypt.hash(data.newPassword, 10);
@@ -198,6 +207,14 @@ export async function changePassword(
 
   if (!user || !user.isActive) {
     throw new Error("User not found");
+  }
+
+  // OAuth-only account: there is no current password to verify against, so
+  // there is nothing to "change". Such users add a password via forgot-password.
+  if (!user.password) {
+    throw new Error(
+      "This account signs in with Google. Use forgot password to set a password first."
+    );
   }
 
   const valid = await bcrypt.compare(data.currentPassword, user.password);
